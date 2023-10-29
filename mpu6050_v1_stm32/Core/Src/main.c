@@ -316,28 +316,28 @@ HAL_StatusTypeDef MPU6050_read_gyro(MPU6050* mpu6050) {
   }
 
   // Now that we have all the readings, chuck them into the struct
-  mpu6050->gx = (int16_t) fifo_readings[0] << 8 | (int16_t) fifo_readings[1];
-  mpu6050->gy = (int16_t) fifo_readings[2] << 8 | (int16_t) fifo_readings[3];
-  mpu6050->gz = (int16_t) fifo_readings[4] << 8 | (int16_t) fifo_readings[5];
+  int16_t temp_gx = (int16_t) fifo_readings[0] << 8 | (int16_t) fifo_readings[1];
+  int16_t temp_gy = (int16_t) fifo_readings[2] << 8 | (int16_t) fifo_readings[3];
+  int16_t temp_gz = (int16_t) fifo_readings[4] << 8 | (int16_t) fifo_readings[5];
 
   // Rescale them according to gyro FSR
   switch(mpu6050->gyro_FSR) {
     case GYRO_FSR_250:
-      mpu6050->gx = mpu6050->gx / 131.0;
-      mpu6050->gy = mpu6050->gy / 131.0;
-      mpu6050->gz = mpu6050->gz / 131.0;
+      mpu6050->gx = temp_gx / 131.0;
+      mpu6050->gy = temp_gy / 131.0;
+      mpu6050->gz = temp_gz / 131.0;
     case GYRO_FSR_500:
-      mpu6050->gx = mpu6050->gx / 65.5;
-      mpu6050->gy = mpu6050->gy / 65.5;
-      mpu6050->gz = mpu6050->gz / 65.5;
+      mpu6050->gx = temp_gx / 65.5;
+      mpu6050->gy = temp_gy / 65.5;
+      mpu6050->gz = temp_gz / 65.5;
     case GYRO_FSR_1000:
-      mpu6050->gx = mpu6050->gx / 32.8;
-      mpu6050->gy = mpu6050->gy / 32.8;
-      mpu6050->gz = mpu6050->gz / 32.8;
+      mpu6050->gx = temp_gx / 32.8;
+      mpu6050->gy = temp_gy / 32.8;
+      mpu6050->gz = temp_gz / 32.8;
     case GYRO_FSR_2000:
-      mpu6050->gx = mpu6050->gx / 16.4;
-      mpu6050->gy = mpu6050->gy / 16.4;
-      mpu6050->gz = mpu6050->gz / 16.4;
+      mpu6050->gx = temp_gx / 16.4;
+      mpu6050->gy = temp_gy / 16.4;
+      mpu6050->gz = temp_gz / 16.4;
   }
 
   return result;
@@ -358,28 +358,28 @@ HAL_StatusTypeDef MPU6050_read_accel(MPU6050* mpu6050) {
   }
 
   // Now that we have all the readings, chuck them into the struct
-  mpu6050->ax = (int16_t) fifo_readings[0] << 8 | (int16_t) fifo_readings[1];
-  mpu6050->ay = (int16_t) fifo_readings[2] << 8 | (int16_t) fifo_readings[3];
-  mpu6050->az = (int16_t) fifo_readings[4] << 8 | (int16_t) fifo_readings[5];
+  int16_t temp_ax = (int16_t) fifo_readings[0] << 8 | (int16_t) fifo_readings[1];
+  int16_t temp_ay = (int16_t) fifo_readings[2] << 8 | (int16_t) fifo_readings[3];
+  int16_t temp_az = (int16_t) fifo_readings[4] << 8 | (int16_t) fifo_readings[5];
 
   // Rescale them according to gyro FSR
   switch(mpu6050->accel_FSR) {
     case ACCEL_FSR_2g:
-      mpu6050->ax = mpu6050->ax / 16384.0;
-      mpu6050->ay = mpu6050->ay / 16384.0;
-      mpu6050->az = mpu6050->az / 16384.0;
+      mpu6050->ax = temp_ax / 16384.0;
+      mpu6050->ay = temp_ay / 16384.0;
+      mpu6050->az = temp_az / 16384.0;
     case ACCEL_FSR_4g:
-      mpu6050->ax = mpu6050->ax / 8192.0;
-      mpu6050->ay = mpu6050->ay / 8192.0;
-      mpu6050->az = mpu6050->az / 8192.0;
+      mpu6050->ax = temp_ax / 8192.0;
+      mpu6050->ay = temp_ay / 8192.0;
+      mpu6050->az = temp_az / 8192.0;
     case ACCEL_FSR_8g:
-      mpu6050->ax = mpu6050->ax / 4096.0;
-      mpu6050->ay = mpu6050->ay / 4096.0;
-      mpu6050->az = mpu6050->az / 4096.0;
+      mpu6050->ax = temp_ax / 4096.0;
+      mpu6050->ay = temp_ay / 4096.0;
+      mpu6050->az = temp_az / 4096.0;
     case ACCEL_FSR_16g:
-      mpu6050->ax = mpu6050->ax / 2048.0;
-      mpu6050->ay = mpu6050->ay / 2048.0;
-      mpu6050->az = mpu6050->az / 2048.0;
+      mpu6050->ax = temp_ax / 2048.0;
+      mpu6050->ay = temp_ay / 2048.0;
+      mpu6050->az = temp_az / 2048.0;
   }
 
   return result;
@@ -398,7 +398,9 @@ HAL_StatusTypeDef MPU6050_read_temp(MPU6050* mpu6050) {
   result = HAL_I2C_Mem_Read(&hi2c4, MPU_ADDR, FIFO_R_W, sizeof(FIFO_R_W), &temp_low, sizeof(temp_low), TIMEOUT_DEFAULT);
 
   // Now that we have all the readings, chuck them into the struct
-  mpu6050->temp = (int16_t) temp_high << 8 | (int16_t) temp_low;
+  int16_t temp = (int16_t) temp_high << 8 | (int16_t) temp_low;
+
+  mpu6050->temp = temp / 340.0 + 36.53; 
 
   return result;
 }
