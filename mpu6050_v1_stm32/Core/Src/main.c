@@ -84,8 +84,6 @@
 /* Private variables ---------------------------------------------------------*/
 
 I2C_HandleTypeDef hi2c4;
-DMA_HandleTypeDef hdma_i2c4_tx;
-DMA_HandleTypeDef hdma_i2c4_rx;
 
 UART_HandleTypeDef huart3;
 
@@ -130,7 +128,6 @@ typedef struct MPU6050 {
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_USART3_UART_Init(void);
-static void MX_BDMA2_Init(void);
 static void MX_I2C4_Init(void);
 static void MX_USB_OTG_HS_USB_Init(void);
 /* USER CODE BEGIN PFP */
@@ -147,6 +144,7 @@ HAL_StatusTypeDef MPU6050_readRegister(MPU6050* mpu6050, uint8_t reg, uint8_t* d
   Info is stored away into the data array
   */
   // HAL_StatusTypeDef result = HAL_I2C_Mem_Read_DMA(mpu6050->i2c_handle, mpu6050->MPU6050_addr, reg, I2C_MEMADD_SIZE_8BIT, data, (uint16_t) 1);
+  // HAL_StatusTypeDef result = HAL_I2C_Mem_Read_IT(mpu6050->i2c_handle, mpu6050->MPU6050_addr, reg, I2C_MEMADD_SIZE_8BIT, data, (uint16_t) 1);
   HAL_StatusTypeDef result = HAL_I2C_Mem_Read(mpu6050->i2c_handle, mpu6050->MPU6050_addr, reg, I2C_MEMADD_SIZE_8BIT, data, (uint16_t) 1, HAL_MAX_DELAY);
   return result;
 }
@@ -156,6 +154,7 @@ HAL_StatusTypeDef MPU6050_writeRegister(MPU6050* mpu6050, uint8_t reg, uint8_t* 
   Writes 1 byte from the data array into the specified register reg using I2C configuration from the MPU6050 instance
   */  
   // HAL_StatusTypeDef result = HAL_I2C_Mem_Write_DMA(mpu6050->i2c_handle, mpu6050->MPU6050_addr, reg, I2C_MEMADD_SIZE_8BIT, data, (uint16_t) 1);
+  // HAL_StatusTypeDef result = HAL_I2C_Mem_Write_IT(mpu6050->i2c_handle, mpu6050->MPU6050_addr, reg, I2C_MEMADD_SIZE_8BIT, data, (uint16_t) 1);
   HAL_StatusTypeDef result = HAL_I2C_Mem_Write(mpu6050->i2c_handle, mpu6050->MPU6050_addr, reg, I2C_MEMADD_SIZE_8BIT, data, (uint16_t) 1, HAL_MAX_DELAY);
   return HAL_OK;
 }
@@ -167,6 +166,7 @@ HAL_StatusTypeDef MPU6050_readRegisters(MPU6050* mpu6050, uint8_t reg, uint8_t* 
   */  
   // NOTE: Length is the number of bytes we wanna read from the register -> 1 means read that register. 2 would mean reading this register then the next one
   // HAL_StatusTypeDef result = HAL_I2C_Mem_Read_DMA(mpu6050->i2c_handle, mpu6050->MPU6050_addr, reg, I2C_MEMADD_SIZE_8BIT, data, (uint16_t) length);
+  // HAL_StatusTypeDef result = HAL_I2C_Mem_Read_IT(mpu6050->i2c_handle, mpu6050->MPU6050_addr, reg, I2C_MEMADD_SIZE_8BIT, data, (uint16_t) length);
   HAL_StatusTypeDef result = HAL_I2C_Mem_Read(mpu6050->i2c_handle, mpu6050->MPU6050_addr, reg, I2C_MEMADD_SIZE_8BIT, data, (uint16_t) length, HAL_MAX_DELAY);
   return HAL_OK;
 }
@@ -520,7 +520,6 @@ int main(void)
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   MX_USART3_UART_Init();
-  MX_BDMA2_Init();
   MX_I2C4_Init();
   MX_USB_OTG_HS_USB_Init();
   /* USER CODE BEGIN 2 */
@@ -805,28 +804,6 @@ static void MX_USB_OTG_HS_USB_Init(void)
   /* USER CODE BEGIN USB_OTG_HS_Init 2 */
 
   /* USER CODE END USB_OTG_HS_Init 2 */
-
-}
-
-/**
-  * Enable DMA controller clock
-  */
-static void MX_BDMA2_Init(void)
-{
-
-  /* DMA controller clock enable */
-  __HAL_RCC_BDMA2_CLK_ENABLE();
-
-  /* DMA interrupt init */
-  /* DMAMUX2_OVR_IRQn interrupt configuration */
-  HAL_NVIC_SetPriority(DMAMUX2_OVR_IRQn, 0, 0);
-  HAL_NVIC_EnableIRQ(DMAMUX2_OVR_IRQn);
-  /* BDMA2_Channel0_IRQn interrupt configuration */
-  HAL_NVIC_SetPriority(BDMA2_Channel0_IRQn, 0, 0);
-  HAL_NVIC_EnableIRQ(BDMA2_Channel0_IRQn);
-  /* BDMA2_Channel1_IRQn interrupt configuration */
-  HAL_NVIC_SetPriority(BDMA2_Channel1_IRQn, 0, 0);
-  HAL_NVIC_EnableIRQ(BDMA2_Channel1_IRQn);
 
 }
 

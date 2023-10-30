@@ -56,6 +56,8 @@ void DebugMon_Handler(void);
 void PendSV_Handler(void);
 void SysTick_Handler(void);
 void USART3_IRQHandler(void);
+void I2C4_EV_IRQHandler(void);
+void I2C4_ER_IRQHandler(void);
 void DMAMUX2_OVR_IRQHandler(void);
 void BDMA2_Channel0_IRQHandler(void);
 void BDMA2_Channel1_IRQHandler(void);

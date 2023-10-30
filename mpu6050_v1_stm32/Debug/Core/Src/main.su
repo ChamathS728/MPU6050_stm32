@@ -1,6 +1,6 @@
-../Core/Src/main.c:144:19:MPU6050_readRegister	48	static
-../Core/Src/main.c:154:19:MPU6050_writeRegister	48	static
-../Core/Src/main.c:163:19:MPU6050_readRegisters	56	static
+../Core/Src/main.c:141:19:MPU6050_readRegister	40	static
+../Core/Src/main.c:152:19:MPU6050_writeRegister	40	static
+../Core/Src/main.c:162:19:MPU6050_readRegisters	40	static
 ../Core/Src/main.c:175:19:MPU6050_wakeup	24	static
 ../Core/Src/main.c:185:19:MPU6050_set_pwr_mgmt	32	static
 ../Core/Src/main.c:203:19:MPU6050_set_dlpf	24	static
@@ -14,10 +14,9 @@
 ../Core/Src/main.c:414:19:MPU6050_read_accel_reg	64	dynamic
 ../Core/Src/main.c:473:19:MPU6050_read_temp_reg	24	static
 ../Core/Src/main.c:498:5:main	64	static
-../Core/Src/main.c:636:6:SystemClock_Config	120	static
-../Core/Src/main.c:699:13:MX_I2C4_Init	8	static
-../Core/Src/main.c:747:13:MX_USART3_UART_Init	8	static
-../Core/Src/main.c:795:13:MX_USB_OTG_HS_USB_Init	4	static
-../Core/Src/main.c:814:13:MX_BDMA2_Init	16	static
-../Core/Src/main.c:838:13:MX_GPIO_Init	64	static
-../Core/Src/main.c:925:6:Error_Handler	4	static,ignoring_inline_asm
+../Core/Src/main.c:635:6:SystemClock_Config	120	static
+../Core/Src/main.c:698:13:MX_I2C4_Init	8	static
+../Core/Src/main.c:746:13:MX_USART3_UART_Init	8	static
+../Core/Src/main.c:794:13:MX_USB_OTG_HS_USB_Init	4	static
+../Core/Src/main.c:815:13:MX_GPIO_Init	64	static
+../Core/Src/main.c:902:6:Error_Handler	4	static,ignoring_inline_asm
