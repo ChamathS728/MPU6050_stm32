@@ -61,7 +61,7 @@ main-build: mpu6050_v1_stm32.elf secondary-outputs
 
 # Tool invocations
 mpu6050_v1_stm32.elf mpu6050_v1_stm32.map: $(OBJS) $(USER_OBJS) C:\Users\chama\STM32CubeIDE\MPU6050_stm32\mpu6050_v1_stm32\STM32H7A3ZITXQ_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
-	arm-none-eabi-gcc -o "mpu6050_v1_stm32.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m7 -T"C:\Users\chama\STM32CubeIDE\MPU6050_stm32\mpu6050_v1_stm32\STM32H7A3ZITXQ_FLASH.ld" --specs=nosys.specs -Wl,-Map="mpu6050_v1_stm32.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv5-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+	arm-none-eabi-gcc -o "mpu6050_v1_stm32.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m7 -T"C:\Users\chama\STM32CubeIDE\MPU6050_stm32\mpu6050_v1_stm32\STM32H7A3ZITXQ_FLASH.ld" --specs=nosys.specs -Wl,-Map="mpu6050_v1_stm32.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv5-d16 -mfloat-abi=hard -mthumb -u _printf_float -Wl,--start-group -lc -lm -Wl,--end-group
 	@echo 'Finished building target: $@'
 	@echo ' '
 
