@@ -108,7 +108,7 @@ typedef enum {
 typedef struct MPU6050 {
   float ax, ay, az; // 16 bit integer
   float gx, gy, gz; // 16 bit integer with 3 entries for x, y and z rotational velocities
-  int16_t temp; // 16 bit integer
+  float temp; // 16 bit integer
   uint8_t gyro_smplrt; // 8kHz or 1kHz dependi ng on DLPF_CFG
   uint8_t dlpf;
   Gyro_FSR_SEL_TypeDef gyro_FSR; // Explicit number of the FSR (eg: 250 deg/s)
@@ -431,7 +431,7 @@ HAL_StatusTypeDef MPU6050_read_temp_fifo(MPU6050* mpu6050) {
   // Now that we have all the readings, chuck them into the struct
   int16_t temp = (int16_t) temp_high << 8 | (int16_t) temp_low;
 
-  mpu6050->temp = temp / 340.0 + 36.53; 
+  mpu6050->temp = (float) temp / 340.0 + 36.53; 
 
   return result;
 }
@@ -549,7 +549,7 @@ HAL_StatusTypeDef MPU6050_read_temp_reg(MPU6050* mpu6050) {
   raw_temp = (temp_H << 8) | (temp_L);
 
   // Fix the readings to be in celsius
-  mpu6050->temp = raw_temp/340.0 + 36.53;
+  mpu6050->temp = ((float) raw_temp)/340.0 + 36.53;
 
   return HAL_OK;
 }
@@ -559,7 +559,7 @@ HAL_StatusTypeDef print_float_UART(float* value, UART_HandleTypeDef* huart) {
   uint8_t transmit_buff[64];
 
   // Put value into the buffer as a string so we can read it properly
-  sprintf((char*)transmit_buff, "%f\n", value);
+  sprintf((char*)transmit_buff, "%f\n", *value);
 
   // Print over UART
   HAL_StatusTypeDef result = HAL_UART_Transmit(huart, transmit_buff, strlen((char*)transmit_buff), HAL_MAX_DELAY);
@@ -573,13 +573,13 @@ HAL_StatusTypeDef MPU6050_print_readings_UART(MPU6050* mpu6050, UART_HandleTypeD
   
   result = print_float_UART(&(mpu6050->ax), huart);
   result = print_float_UART(&(mpu6050->ay), huart);
-  result = print_float_UART(mpu6050.az, huart);
+  result = print_float_UART(&(mpu6050->az), huart);
 
-  result = print_float_UART(mpu6050->gx, huart);
-  result = print_float_UART(mpu6050->gy, huart);
-  result = print_float_UART(mpu6050->gz, huart);
+  result = print_float_UART(&(mpu6050->gx), huart);
+  result = print_float_UART(&(mpu6050->gy), huart);
+  result = print_float_UART(&(mpu6050->gz), huart);
 
-  result = print_float_UART(mpu6050->temp, huart);
+  result = print_float_UART(&(mpu6050->temp), huart);
 
   return result;
 }
