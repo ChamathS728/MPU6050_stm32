@@ -84,6 +84,8 @@
 /* Private variables ---------------------------------------------------------*/
 
 I2C_HandleTypeDef hi2c4;
+DMA_HandleTypeDef hdma_i2c4_tx;
+DMA_HandleTypeDef hdma_i2c4_rx;
 
 UART_HandleTypeDef huart3;
 
@@ -107,7 +109,7 @@ typedef enum {
 
 typedef struct MPU6050 {
   // Info used for I2C communication
-  I2C_HandleTypeDef i2c_handle;
+  I2C_HandleTypeDef* i2c_handle;
   uint8_t MPU6050_addr;
 
   // Configuration information
@@ -128,8 +130,9 @@ typedef struct MPU6050 {
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_USART3_UART_Init(void);
-static void MX_USB_OTG_HS_USB_Init(void);
+static void MX_BDMA2_Init(void);
 static void MX_I2C4_Init(void);
+static void MX_USB_OTG_HS_USB_Init(void);
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
@@ -141,23 +144,45 @@ static void MX_I2C4_Init(void);
 HAL_StatusTypeDef MPU6050_readRegister(MPU6050* mpu6050, uint8_t reg, uint8_t* data) {
   /*
   Reads 1 byte from the specified register using I2C configuration from the MPU6050 instance
-  Info is stored away into the data register
+  Info is stored away into the data array
   */
-  HAL_StatusTypeDef result = HAL_I2C_Mem_Read_IT(mpu6050->i2c_handle, mpu6050->MPU6050_addr, reg, I2C_MEMADD_SIZE_8BIT, data, 1);
-
+  // HAL_StatusTypeDef result = HAL_I2C_Mem_Read_DMA(mpu6050->i2c_handle, mpu6050->MPU6050_addr, reg, I2C_MEMADD_SIZE_8BIT, data, (uint16_t) 1);
+  HAL_StatusTypeDef result = HAL_I2C_Mem_Read(mpu6050->i2c_handle, mpu6050->MPU6050_addr, reg, I2C_MEMADD_SIZE_8BIT, data, (uint16_t) 1, HAL_MAX_DELAY);
   return result;
 }
 
-HAL_StatusTypeDef MPU6050_wakeup(void) {
+HAL_StatusTypeDef MPU6050_writeRegister(MPU6050* mpu6050, uint8_t reg, uint8_t* data) {
+  /*
+  Writes 1 byte from the data array into the specified register reg using I2C configuration from the MPU6050 instance
+  */  
+  // HAL_StatusTypeDef result = HAL_I2C_Mem_Write_DMA(mpu6050->i2c_handle, mpu6050->MPU6050_addr, reg, I2C_MEMADD_SIZE_8BIT, data, (uint16_t) 1);
+  HAL_StatusTypeDef result = HAL_I2C_Mem_Write(mpu6050->i2c_handle, mpu6050->MPU6050_addr, reg, I2C_MEMADD_SIZE_8BIT, data, (uint16_t) 1, HAL_MAX_DELAY);
+  return HAL_OK;
+}
+
+HAL_StatusTypeDef MPU6050_readRegisters(MPU6050* mpu6050, uint8_t reg, uint8_t* data, uint8_t length) {
+  /*
+  Reads 1 byte from the specified register using I2C configuration from the MPU6050 instance
+  Info is stored away into the data array
+  */  
+  // NOTE: Length is the number of bytes we wanna read from the register -> 1 means read that register. 2 would mean reading this register then the next one
+  // HAL_StatusTypeDef result = HAL_I2C_Mem_Read_DMA(mpu6050->i2c_handle, mpu6050->MPU6050_addr, reg, I2C_MEMADD_SIZE_8BIT, data, (uint16_t) length);
+  HAL_StatusTypeDef result = HAL_I2C_Mem_Read(mpu6050->i2c_handle, mpu6050->MPU6050_addr, reg, I2C_MEMADD_SIZE_8BIT, data, (uint16_t) length, HAL_MAX_DELAY);
+  return HAL_OK;
+}
+
+
+HAL_StatusTypeDef MPU6050_wakeup(MPU6050* mpu6050) {
   // Write 0's to the PWR_MGMT_1 register to wake it up
   // It sets clock source as internal 8MHz clock, and it is woken up
-  uint8_t zero = 0;
-  HAL_StatusTypeDef res = HAL_I2C_Mem_Write(&hi2c4, MPU_ADDR, PWR_MGMT_1, I2C_MEMADD_SIZE_8BIT, &zero, sizeof(zero), TIMEOUT_DEFAULT);
+  // uint8_t zero = 0;
+  // HAL_StatusTypeDef res = HAL_I2C_Mem_Write(&hi2c4, MPU_ADDR, PWR_MGMT_1, I2C_MEMADD_SIZE_8BIT, &zero, sizeof(zero), TIMEOUT_DEFAULT);
 
+  HAL_StatusTypeDef res = MPU6050_writeRegister(mpu6050, PWR_MGMT_1, 0);
   return res;
 }
 
-HAL_StatusTypeDef MPU6050_set_pwr_mgmt(int dev_rst, int sleep, int cycle, int temp_dis, int clksel) {
+HAL_StatusTypeDef MPU6050_set_pwr_mgmt(MPU6050* mpu6050, int dev_rst, int sleep, int cycle, int temp_dis, int clksel) {
   // Assumption is that the first 4 inputs are 1 bit (0 or 1), and clksel is 3 bit (0 to 7)
   assert(dev_rst >= 0 && dev_rst <= 1);
   assert(sleep >= 0 && sleep <= 1);
@@ -169,7 +194,8 @@ HAL_StatusTypeDef MPU6050_set_pwr_mgmt(int dev_rst, int sleep, int cycle, int te
   uint8_t res =  0 | (dev_rst << 7) | (sleep << 6) | (cycle << 5) | (temp_dis << 3) | clksel;
   
   // Write to the register over I2C
-  HAL_StatusTypeDef result = HAL_I2C_Mem_Write(&hi2c4, MPU_ADDR, PWR_MGMT_1, I2C_MEMADD_SIZE_8BIT, &res, sizeof(res), TIMEOUT_DEFAULT);
+  // HAL_StatusTypeDef result = HAL_I2C_Mem_Write(&hi2c4, MPU_ADDR, PWR_MGMT_1, I2C_MEMADD_SIZE_8BIT, &res, sizeof(res), TIMEOUT_DEFAULT);
+  HAL_StatusTypeDef result = MPU6050_writeRegister(mpu6050, PWR_MGMT_1, &res);
 
   return result;
 }
@@ -184,15 +210,17 @@ HAL_StatusTypeDef MPU6050_set_dlpf(uint8_t* dlpf, MPU6050* mpu6050) {
   // assert(*dlpf >= 0);
   // assert(*dlpf <= 7);
 
-  HAL_StatusTypeDef result = HAL_I2C_Mem_Write(&hi2c4, MPU_ADDR, DLPF, I2C_MEMADD_SIZE_8BIT, dlpf, sizeof(*dlpf), TIMEOUT_DEFAULT);
+  // HAL_StatusTypeDef result = HAL_I2C_Mem_Write(&hi2c4, MPU_ADDR, DLPF, I2C_MEMADD_SIZE_8BIT, dlpf, sizeof(*dlpf), TIMEOUT_DEFAULT);
+  HAL_StatusTypeDef result = MPU6050_writeRegister(mpu6050, PWR_MGMT_1, dlpf);
   
+
   // Store the dlpf number in the struct
   mpu6050->dlpf = *dlpf;
   return result;
 }
 
 // REVIEW - Maths behind the smplrt_div_input may not be good due to division.
-HAL_StatusTypeDef MPU6050_set_sample_rate(uint8_t* freq_ptr, MPU6050* mpu650_obj) {
+HAL_StatusTypeDef MPU6050_set_sample_rate(uint8_t* freq_ptr, MPU6050* mpu6050) {
   /*
   When DLPF_CFG = 0 or 7, gyro output rate = 8kHz  
     otherwise, gyro output rate = 1kHz
@@ -205,12 +233,13 @@ HAL_StatusTypeDef MPU6050_set_sample_rate(uint8_t* freq_ptr, MPU6050* mpu650_obj
   This also assumes that the gyro output rate is at 1kHz
   */
   
-  uint8_t smplrt_div_input = (mpu650_obj->gyro_smplrt)/(*freq_ptr) - 1;
+  uint8_t smplrt_div_input = (mpu6050->gyro_smplrt)/(*freq_ptr) - 1;
 
-  HAL_StatusTypeDef result = HAL_I2C_Mem_Write(&hi2c4, MPU_ADDR, SMPLRT_DIV, I2C_MEMADD_SIZE_8BIT, &smplrt_div_input, sizeof(smplrt_div_input), TIMEOUT_DEFAULT);
-  
+  // HAL_StatusTypeDef result = HAL_I2C_Mem_Write(&hi2c4, MPU_ADDR, SMPLRT_DIV, I2C_MEMADD_SIZE_8BIT, &smplrt_div_input, sizeof(smplrt_div_input), TIMEOUT_DEFAULT);
+  HAL_StatusTypeDef result = MPU6050_writeRegister(mpu6050, SMPLRT_DIV, &smplrt_div_input);
+
   // Store the new sample rate divider in the struct
-  mpu650_obj->gyro_smplrt = *freq_ptr;
+  mpu6050->gyro_smplrt = *freq_ptr;
   return result;
 }
 
@@ -239,7 +268,9 @@ HAL_StatusTypeDef MPU6050_set_gyro_FSR(Gyro_FSR_SEL_TypeDef setting, MPU6050* mp
       break;
   }
   
-  HAL_StatusTypeDef result = HAL_I2C_Mem_Write(&hi2c4, MPU_ADDR, GYRO_CONFIG, I2C_MEMADD_SIZE_8BIT, &pData, sizeof(pData), TIMEOUT_DEFAULT);
+  // HAL_StatusTypeDef result = HAL_I2C_Mem_Write(&hi2c4, MPU_ADDR, GYRO_CONFIG, I2C_MEMADD_SIZE_8BIT, &pData, sizeof(pData), TIMEOUT_DEFAULT);
+  HAL_StatusTypeDef result = MPU6050_writeRegister(mpu6050, GYRO_CONFIG, &pData);  
+  
   return result;
 }
 
@@ -266,25 +297,30 @@ HAL_StatusTypeDef MPU6050_set_accel_FSR(Accel_FSR_SEL_TypeDef setting, MPU6050* 
       break;
   }
   
-  HAL_StatusTypeDef result = HAL_I2C_Mem_Write(&hi2c4, MPU_ADDR, ACCEL_CONFIG, I2C_MEMADD_SIZE_8BIT, &pData, sizeof(pData), TIMEOUT_DEFAULT);
+  // HAL_StatusTypeDef result = HAL_I2C_Mem_Write(&hi2c4, MPU_ADDR, ACCEL_CONFIG, I2C_MEMADD_SIZE_8BIT, &pData, sizeof(pData), TIMEOUT_DEFAULT);
+  HAL_StatusTypeDef result = MPU6050_writeRegister(mpu6050, ACCEL_CONFIG, &pData);    
+  
   return result;  
 }
 
 
-HAL_StatusTypeDef MPU6050_FIFO_enable(void) {
+HAL_StatusTypeDef MPU6050_FIFO_enable(MPU6050* mpu6050) {
   // Write a 1 to bit 6 of register 0x6A
   uint8_t res = (1 << 6);
 
-  HAL_StatusTypeDef result = HAL_I2C_Mem_Write(&hi2c4, MPU_ADDR, USER_CTRL, I2C_MEMADD_SIZE_8BIT, &res, sizeof(res), TIMEOUT_DEFAULT);
+  // HAL_StatusTypeDef result = HAL_I2C_Mem_Write(&hi2c4, MPU_ADDR, USER_CTRL, I2C_MEMADD_SIZE_8BIT, &res, sizeof(res), TIMEOUT_DEFAULT);
+  HAL_StatusTypeDef result = MPU6050_writeRegister(mpu6050, USER_CTRL, &res);     
   return result;
 }
 
-HAL_StatusTypeDef MPU6050_FIFO_reset(void) {
+HAL_StatusTypeDef MPU6050_FIFO_reset(MPU6050* mpu6050) {
   // Assumes that MPU6050 FIFO buffer is enabled. FIFO enable bit is driven low ONLY when MPU is power cycled (turned off and back on)
   // Write a 2 to bit 2 of register 0x6A -> this gets written to 0 once FIFO is reset anyway
   uint8_t res = (1 << 2);
 
-  HAL_StatusTypeDef result = HAL_I2C_Mem_Write(&hi2c4, MPU_ADDR, USER_CTRL, I2C_MEMADD_SIZE_8BIT, &res, sizeof(res), TIMEOUT_DEFAULT);
+  // HAL_StatusTypeDef result = HAL_I2C_Mem_Write(&hi2c4, MPU_ADDR, USER_CTRL, I2C_MEMADD_SIZE_8BIT, &res, sizeof(res), TIMEOUT_DEFAULT);
+  HAL_StatusTypeDef result = MPU6050_writeRegister(mpu6050, USER_CTRL, &res);  
+
   return result;  
 }
 
@@ -293,12 +329,13 @@ HAL_StatusTypeDef MPU6050_init(MPU6050* mpu6050_ptr, uint8_t* dlpf, uint8_t* smp
   uint8_t check = 0;
   // uint8_t check[4];
   // HAL_StatusTypeDef result = HAL_I2C_Mem_Write(&hi2c4, MPU_ADDR, WHO_AM_I, I2C_MEMADD_SIZE_8BIT, &check, sizeof(check), TIMEOUT_DEFAULT);
-  HAL_StatusTypeDef result = HAL_I2C_Mem_Read(&hi2c4, MPU_ADDR, WHO_AM_I, I2C_MEMADD_SIZE_8BIT, &check, sizeof(check), TIMEOUT_DEFAULT);
+  // HAL_StatusTypeDef result = HAL_I2C_Mem_Read(&hi2c4, MPU_ADDR, WHO_AM_I, I2C_MEMADD_SIZE_8BIT, &check, sizeof(check), TIMEOUT_DEFAULT);
+  HAL_StatusTypeDef result = MPU6050_readRegister(mpu6050_ptr, WHO_AM_I, &check);
   // HAL_StatusTypeDef result = HAL_I2C_Mem_Read(&hi2c4, MPU_ADDR, WHO_AM_I, 1, check, 1, 1000);
 
   if (result == HAL_OK && check == 0x68) { //check == 0x68
     // Device is identified as the MPU6050 yay -> Wake it up
-    MPU6050_wakeup();
+    MPU6050_wakeup(mpu6050_ptr);
 
     // Configure DLPF_CFG and store away settings
     MPU6050_set_dlpf(dlpf, mpu6050_ptr);
@@ -320,23 +357,32 @@ HAL_StatusTypeDef MPU6050_read_gyro_reg(MPU6050* mpu6050) {
   int16_t gy_raw = 0;
   int16_t gz_raw = 0;
 
-  int8_t g_raw_H = 0;
-  int8_t g_raw_L = 0;
+  uint8_t num_of_bytes = 6;
+  int8_t g_raw[num_of_bytes];
 
   // Read X gyro registers and store the raw gyroscope value away
-  HAL_StatusTypeDef result = HAL_I2C_Mem_Read(&hi2c4, MPU_ADDR, GYRO_XOUT_H, I2C_MEMADD_SIZE_8BIT, &g_raw_H, sizeof(g_raw_H), TIMEOUT_DEFAULT);
-  result = HAL_I2C_Mem_Read(&hi2c4, MPU_ADDR, GYRO_XOUT_L, I2C_MEMADD_SIZE_8BIT, &g_raw_L, sizeof(g_raw_L), TIMEOUT_DEFAULT);
-  gx_raw = (g_raw_H << 8) | (g_raw_L);
+  // HAL_StatusTypeDef result = HAL_I2C_Mem_Read(&hi2c4, MPU_ADDR, GYRO_XOUT_H, I2C_MEMADD_SIZE_8BIT, &g_raw_H, sizeof(g_raw_H), TIMEOUT_DEFAULT);
+  
+  // Read all gyroscope registers starting from GYRO_XOUT_H and ending at GYRO_ZOUT_L
+  HAL_StatusTypeDef result = MPU6050_readRegisters(mpu6050, GYRO_XOUT_H, g_raw, num_of_bytes);
+
+  // Get the raw x, y and z values
+  gx_raw = (g_raw[0] << 8) | (g_raw[1]);
+  gy_raw = (g_raw[2] << 8) | (g_raw[3]);
+  gz_raw = (g_raw[4] << 8) | (g_raw[5]);
+
+  // result = HAL_I2C_Mem_Read(&hi2c4, MPU_ADDR, GYRO_XOUT_L, I2C_MEMADD_SIZE_8BIT, &g_raw_L, sizeof(g_raw_L), TIMEOUT_DEFAULT);
+  // gx_raw = (g_raw[0] << 8) | (g_raw[1]);
 
   // Read Y gyro registers and store the raw gyroscope value away
-  result = HAL_I2C_Mem_Read(&hi2c4, MPU_ADDR, GYRO_YOUT_H, I2C_MEMADD_SIZE_8BIT, &g_raw_H, sizeof(g_raw_H), TIMEOUT_DEFAULT);
-  result = HAL_I2C_Mem_Read(&hi2c4, MPU_ADDR, GYRO_YOUT_L, I2C_MEMADD_SIZE_8BIT, &g_raw_L, sizeof(g_raw_L), TIMEOUT_DEFAULT);
-  gy_raw = (g_raw_H << 8) | (g_raw_L);
+  // result = HAL_I2C_Mem_Read(&hi2c4, MPU_ADDR, GYRO_YOUT_H, I2C_MEMADD_SIZE_8BIT, &g_raw_H, sizeof(g_raw_H), TIMEOUT_DEFAULT);
+  // result = HAL_I2C_Mem_Read(&hi2c4, MPU_ADDR, GYRO_YOUT_L, I2C_MEMADD_SIZE_8BIT, &g_raw_L, sizeof(g_raw_L), TIMEOUT_DEFAULT);
+  // gy_raw = (g_raw[2] << 8) | (g_raw[3]);
 
   // Read Z gyro registers and store the raw gyroscope value away
-  result = HAL_I2C_Mem_Read(&hi2c4, MPU_ADDR, GYRO_ZOUT_H, I2C_MEMADD_SIZE_8BIT, &g_raw_H, sizeof(g_raw_H), TIMEOUT_DEFAULT);
-  result = HAL_I2C_Mem_Read(&hi2c4, MPU_ADDR, GYRO_ZOUT_L, I2C_MEMADD_SIZE_8BIT, &g_raw_L, sizeof(g_raw_L), TIMEOUT_DEFAULT);
-  gz_raw = (g_raw_H << 8) | (g_raw_L);
+  // result = HAL_I2C_Mem_Read(&hi2c4, MPU_ADDR, GYRO_ZOUT_H, I2C_MEMADD_SIZE_8BIT, &g_raw_H, sizeof(g_raw_H), TIMEOUT_DEFAULT);
+  // result = HAL_I2C_Mem_Read(&hi2c4, MPU_ADDR, GYRO_ZOUT_L, I2C_MEMADD_SIZE_8BIT, &g_raw_L, sizeof(g_raw_L), TIMEOUT_DEFAULT);
+  // gz_raw = (g_raw[4] << 8) | (g_raw[5]);
 
   // Rescale raw readings according to gyro FSR
   switch(mpu6050->gyro_FSR) {
@@ -371,23 +417,31 @@ HAL_StatusTypeDef MPU6050_read_accel_reg(MPU6050* mpu6050) {
   int16_t ay_raw = 0;
   int16_t az_raw = 0;
 
-  int8_t a_raw_H = 0;
-  int8_t a_raw_L = 0;
+  uint8_t num_of_bytes = 6;
+  int8_t a_raw[num_of_bytes];
 
-  // Read X accel registers and store the raw acceleration value away
-  HAL_StatusTypeDef result = HAL_I2C_Mem_Read(&hi2c4, MPU_ADDR, ACCEL_XOUT_H, I2C_MEMADD_SIZE_8BIT, &a_raw_H, sizeof(a_raw_H), TIMEOUT_DEFAULT);
-  result = HAL_I2C_Mem_Read(&hi2c4, MPU_ADDR, ACCEL_XOUT_L, I2C_MEMADD_SIZE_8BIT, &a_raw_L, sizeof(a_raw_L), TIMEOUT_DEFAULT);
-  ax_raw = (a_raw_H << 8) | (a_raw_L);
+  // Read all gyroscope registers starting from GYRO_XOUT_H and ending at GYRO_ZOUT_L
+  HAL_StatusTypeDef result = MPU6050_readRegisters(mpu6050, ACCEL_XOUT_H, a_raw, num_of_bytes);
 
-  // Read Y accel registers and store the raw acceleration value away
-  result = HAL_I2C_Mem_Read(&hi2c4, MPU_ADDR, ACCEL_YOUT_H, I2C_MEMADD_SIZE_8BIT, &a_raw_H, sizeof(a_raw_H), TIMEOUT_DEFAULT);
-  result = HAL_I2C_Mem_Read(&hi2c4, MPU_ADDR, ACCEL_YOUT_L, I2C_MEMADD_SIZE_8BIT, &a_raw_L, sizeof(a_raw_L), TIMEOUT_DEFAULT);
-  ay_raw = (a_raw_H << 8) | (a_raw_L);
+  // Get the raw x, y and z values
+  ax_raw = (a_raw[0] << 8) | (a_raw[1]);
+  ay_raw = (a_raw[2] << 8) | (a_raw[3]);
+  az_raw = (a_raw[4] << 8) | (a_raw[5]);
 
-  // Read Z accel registers and store the raw acceleration value away
-  result = HAL_I2C_Mem_Read(&hi2c4, MPU_ADDR, ACCEL_ZOUT_H, I2C_MEMADD_SIZE_8BIT, &a_raw_H, sizeof(a_raw_H), TIMEOUT_DEFAULT);
-  result = HAL_I2C_Mem_Read(&hi2c4, MPU_ADDR, ACCEL_ZOUT_L, I2C_MEMADD_SIZE_8BIT, &a_raw_L, sizeof(a_raw_L), TIMEOUT_DEFAULT);
-  az_raw = (a_raw_H << 8) | (a_raw_L);
+  // // Read X accel registers and store the raw acceleration value away
+  // HAL_StatusTypeDef result = HAL_I2C_Mem_Read(&hi2c4, MPU_ADDR, ACCEL_XOUT_H, I2C_MEMADD_SIZE_8BIT, &a_raw_H, sizeof(a_raw_H), TIMEOUT_DEFAULT);
+  // result = HAL_I2C_Mem_Read(&hi2c4, MPU_ADDR, ACCEL_XOUT_L, I2C_MEMADD_SIZE_8BIT, &a_raw_L, sizeof(a_raw_L), TIMEOUT_DEFAULT);
+  // ax_raw = (a_raw_H << 8) | (a_raw_L);
+
+  // // Read Y accel registers and store the raw acceleration value away
+  // result = HAL_I2C_Mem_Read(&hi2c4, MPU_ADDR, ACCEL_YOUT_H, I2C_MEMADD_SIZE_8BIT, &a_raw_H, sizeof(a_raw_H), TIMEOUT_DEFAULT);
+  // result = HAL_I2C_Mem_Read(&hi2c4, MPU_ADDR, ACCEL_YOUT_L, I2C_MEMADD_SIZE_8BIT, &a_raw_L, sizeof(a_raw_L), TIMEOUT_DEFAULT);
+  // ay_raw = (a_raw_H << 8) | (a_raw_L);
+
+  // // Read Z accel registers and store the raw acceleration value away
+  // result = HAL_I2C_Mem_Read(&hi2c4, MPU_ADDR, ACCEL_ZOUT_H, I2C_MEMADD_SIZE_8BIT, &a_raw_H, sizeof(a_raw_H), TIMEOUT_DEFAULT);
+  // result = HAL_I2C_Mem_Read(&hi2c4, MPU_ADDR, ACCEL_ZOUT_L, I2C_MEMADD_SIZE_8BIT, &a_raw_L, sizeof(a_raw_L), TIMEOUT_DEFAULT);
+  // az_raw = (a_raw_H << 8) | (a_raw_L);
 
   // Rescale them according to accel FSR
   switch(mpu6050->accel_FSR) {
@@ -419,12 +473,15 @@ HAL_StatusTypeDef MPU6050_read_accel_reg(MPU6050* mpu6050) {
 HAL_StatusTypeDef MPU6050_read_temp_reg(MPU6050* mpu6050) {
   int16_t raw_temp = 0;
 
-  int8_t temp_H = 0;
-  int8_t temp_L = 0;
+  uint8_t num_of_bytes = 2;
+  int8_t temp[2];
 
-  HAL_StatusTypeDef result = HAL_I2C_Mem_Read(&hi2c4, MPU_ADDR, TEMP_OUT_H, I2C_MEMADD_SIZE_8BIT, &temp_H, sizeof(temp_H), TIMEOUT_DEFAULT);
-  result = HAL_I2C_Mem_Read(&hi2c4, MPU_ADDR, TEMP_OUT_L, I2C_MEMADD_SIZE_8BIT, &temp_L, sizeof(temp_L), TIMEOUT_DEFAULT);
-  raw_temp = (temp_H << 8) | (temp_L);
+  HAL_StatusTypeDef result = MPU6050_readRegisters(mpu6050, TEMP_OUT_H, temp, num_of_bytes);
+  raw_temp = (temp[0] << 8) | (temp[1]);
+
+  // HAL_StatusTypeDef result = HAL_I2C_Mem_Read(&hi2c4, MPU_ADDR, TEMP_OUT_H, I2C_MEMADD_SIZE_8BIT, &temp_H, sizeof(temp_H), TIMEOUT_DEFAULT);
+  // result = HAL_I2C_Mem_Read(&hi2c4, MPU_ADDR, TEMP_OUT_L, I2C_MEMADD_SIZE_8BIT, &temp_L, sizeof(temp_L), TIMEOUT_DEFAULT);
+  // raw_temp = (temp_H << 8) | (temp_L);
 
   // Fix the readings to be in celsius
   mpu6050->temp = ((float) raw_temp)/340.0 + 36.53;
@@ -463,27 +520,59 @@ int main(void)
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   MX_USART3_UART_Init();
-  MX_USB_OTG_HS_USB_Init();
+  MX_BDMA2_Init();
   MX_I2C4_Init();
+  MX_USB_OTG_HS_USB_Init();
   /* USER CODE BEGIN 2 */
 
   // Run the MPU init
-  MPU6050 mpu6050;
+/*
+  // Info used for I2C communication
+  I2C_HandleTypeDef* i2c_handle;
+  uint8_t MPU6050_addr;
+
+  // Configuration information
+  uint8_t gyro_smplrt; // 8kHz or 1kHz dependi ng on DLPF_CFG
+  uint8_t dlpf;
+  Gyro_FSR_SEL_TypeDef gyro_FSR; // Explicit number of the FSR (eg: 250 deg/s)
+  Accel_FSR_SEL_TypeDef accel_FSR; // Just the coefficient (eg: accel_FSR = 2 means 2g = 2 x 9.8)
+
+  // Actual data stored away
+  float ax, ay, az; // 16 bit integer
+  float gx, gy, gz; // 16 bit integer with 3 entries for x, y and z rotational velocities
+  float temp; // 16 bit integer
+*/
+
+  MPU6050 mpu6050 = {
+    .i2c_handle = &hi2c4,
+    .MPU6050_addr = MPU_ADDR,
+    .gyro_smplrt = 0,
+    .dlpf = 0,
+    .gyro_FSR = 0,
+    .accel_FSR = 0,
+    .ax = 0,
+    .ay = 0,
+    .az = 0,
+    .gx = 0,
+    .gy = 0,
+    .gz = 0,
+    .temp = 0,
+  };
   
   // Wake up the MPU6050 as well
-  MPU6050_wakeup();
+  MPU6050_wakeup(&mpu6050);
 
   // Initialise the MPU6050
   uint8_t dlpf = 1;
   uint8_t smplfrq = 1;
   MPU6050_init(&mpu6050, &dlpf, &smplfrq, GYRO_FSR_250, ACCEL_FSR_2g);
-  MPU6050_set_pwr_mgmt(0, 0, 0, 0, 1);
+  MPU6050_set_pwr_mgmt(&mpu6050, 0, 0, 0, 0, 1);
 
   // Enable the FIFO buffer
-  MPU6050_FIFO_enable();
+  MPU6050_FIFO_enable(&mpu6050);
   // Reset it as well so that it can be burst read or something -> https://stackoverflow.com/questions/60419390/mpu-6050-correctly-reading-data-from-the-fifo-register
-  MPU6050_FIFO_reset();
-  MPU6050_FIFO_enable();
+  MPU6050_FIFO_reset(&mpu6050);
+  MPU6050_FIFO_enable(&mpu6050);
 
   // float gyro_buff[3] = {1.0, 2.0, 3.0};
   // float accel_buff[3] = {4.0, 5.0, 6.0};
@@ -516,7 +605,7 @@ int main(void)
 
     
     // Stuff below here for printing to serial
-    MPU6050_print_readings_UART(&mpu6050, &huart3);
+    // MPU6050_print_readings_UART(&mpu6050, &huart3);
 
 
 //    gyro_buff[0] = mpu6050.gx;
@@ -716,6 +805,28 @@ static void MX_USB_OTG_HS_USB_Init(void)
   /* USER CODE BEGIN USB_OTG_HS_Init 2 */
 
   /* USER CODE END USB_OTG_HS_Init 2 */
+
+}
+
+/**
+  * Enable DMA controller clock
+  */
+static void MX_BDMA2_Init(void)
+{
+
+  /* DMA controller clock enable */
+  __HAL_RCC_BDMA2_CLK_ENABLE();
+
+  /* DMA interrupt init */
+  /* DMAMUX2_OVR_IRQn interrupt configuration */
+  HAL_NVIC_SetPriority(DMAMUX2_OVR_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(DMAMUX2_OVR_IRQn);
+  /* BDMA2_Channel0_IRQn interrupt configuration */
+  HAL_NVIC_SetPriority(BDMA2_Channel0_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(BDMA2_Channel0_IRQn);
+  /* BDMA2_Channel1_IRQn interrupt configuration */
+  HAL_NVIC_SetPriority(BDMA2_Channel1_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(BDMA2_Channel1_IRQn);
 
 }
 
