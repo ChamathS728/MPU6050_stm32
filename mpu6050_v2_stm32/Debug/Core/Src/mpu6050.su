@@ -1,0 +1,15 @@
+../Core/Src/mpu6050.c:15:19:MPU6050_wakeup	24	static
+../Core/Src/mpu6050.c:25:19:MPU6050_set_pwr_mgmt	32	static
+../Core/Src/mpu6050.c:43:19:MPU6050_set_dlpf	24	static
+../Core/Src/mpu6050.c:63:19:MPU6050_set_sample_rate	24	static
+../Core/Src/mpu6050.c:87:19:MPU6050_set_gyro_FSR	24	static
+../Core/Src/mpu6050.c:118:19:MPU6050_set_accel_FSR	24	static
+../Core/Src/mpu6050.c:147:19:MPU6050_FIFO_enable	24	static
+../Core/Src/mpu6050.c:156:19:MPU6050_FIFO_reset	24	static
+../Core/Src/mpu6050.c:167:19:MPU6050_init	32	static
+../Core/Src/mpu6050.c:221:19:MPU6050_read_gyro_reg	64	dynamic
+../Core/Src/mpu6050.c:268:19:MPU6050_read_accel_reg	64	dynamic
+../Core/Src/mpu6050.c:312:19:MPU6050_read_temp_reg	24	static
+../Core/Src/mpu6050.c:329:19:MPU6050_readRegister	48	static
+../Core/Src/mpu6050.c:341:19:MPU6050_writeRegister	48	static
+../Core/Src/mpu6050.c:351:19:MPU6050_readRegisters	56	static

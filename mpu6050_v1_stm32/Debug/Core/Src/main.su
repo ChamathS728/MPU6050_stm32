@@ -1,6 +1,6 @@
-../Core/Src/main.c:141:19:MPU6050_readRegister	40	static
-../Core/Src/main.c:152:19:MPU6050_writeRegister	40	static
-../Core/Src/main.c:162:19:MPU6050_readRegisters	40	static
+../Core/Src/main.c:141:19:MPU6050_readRegister	48	static
+../Core/Src/main.c:152:19:MPU6050_writeRegister	48	static
+../Core/Src/main.c:162:19:MPU6050_readRegisters	56	static
 ../Core/Src/main.c:175:19:MPU6050_wakeup	24	static
 ../Core/Src/main.c:185:19:MPU6050_set_pwr_mgmt	32	static
 ../Core/Src/main.c:203:19:MPU6050_set_dlpf	24	static

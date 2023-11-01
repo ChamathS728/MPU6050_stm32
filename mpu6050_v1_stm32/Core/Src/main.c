@@ -446,24 +446,24 @@ HAL_StatusTypeDef MPU6050_read_accel_reg(MPU6050* mpu6050) {
   // Rescale them according to accel FSR
   switch(mpu6050->accel_FSR) {
     case ACCEL_FSR_2g:
-      mpu6050->ax = ((float) ax_raw) / 16384.0;
-      mpu6050->ay = ((float) ay_raw) / 16384.0;
-      mpu6050->az = ((float) az_raw) / 16384.0;
+      mpu6050->ax = ((float) ax_raw) / 16384.0 * 9.8;
+      mpu6050->ay = ((float) ay_raw) / 16384.0 * 9.8;
+      mpu6050->az = ((float) az_raw) / 16384.0 * 9.8;
       break;
     case ACCEL_FSR_4g:
-      mpu6050->ax = ((float) ax_raw) / 8192.0;
-      mpu6050->ay = ((float) ay_raw) / 8192.0;
-      mpu6050->az = ((float) az_raw) / 8192.0;
+      mpu6050->ax = ((float) ax_raw) / 8192.0 * 9.8;
+      mpu6050->ay = ((float) ay_raw) / 8192.0 * 9.8;
+      mpu6050->az = ((float) az_raw) / 8192.0 * 9.8;
       break;
     case ACCEL_FSR_8g:
-      mpu6050->ax = ((float) ax_raw) / 4096.0;
-      mpu6050->ay = ((float) ay_raw) / 4096.0;
-      mpu6050->az = ((float) az_raw) / 4096.0;
+      mpu6050->ax = ((float) ax_raw) / 4096.0 * 9.8;
+      mpu6050->ay = ((float) ay_raw) / 4096.0 * 9.8;
+      mpu6050->az = ((float) az_raw) / 4096.0 * 9.8;
       break;
     case ACCEL_FSR_16g:
-      mpu6050->ax = ((float) ax_raw) / 2048.0;
-      mpu6050->ay = ((float) ay_raw) / 2048.0;
-      mpu6050->az = ((float) az_raw) / 2048.0;
+      mpu6050->ax = ((float) ax_raw) / 2048.0 * 9.8;
+      mpu6050->ay = ((float) ay_raw) / 2048.0 * 9.8;
+      mpu6050->az = ((float) az_raw) / 2048.0 * 9.8;
       break;
   }
 
