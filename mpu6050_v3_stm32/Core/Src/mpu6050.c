@@ -324,6 +324,65 @@ HAL_StatusTypeDef MPU6050_read_temp_reg(MPU6050* mpu6050) {
   return HAL_OK;
 }
 
+uint8_t MPU6050_readGyro_DMA(MPU6050* mpu6050) {
+  // Declare a static rxBuf made of uint8_t since it'll store register contents
+
+  // Call HAL_I2C_Mem_Read_DMA with necessary values (check number of bytes!)
+  
+  return 1;
+}
+
+uint8_t MPU6050_readAccel_DMA(MPU6050* mpu6050) {
+  // Declare a static rxBuf made of uint8_t since it'll store register contents
+
+  // Call HAL_I2C_Mem_Read_DMA with necessary values (check number of bytes!)
+    
+  return 1;
+}
+
+uint8_t MPU6050_readTemp_DMA(MPU6050* mpu6050) {
+  // Declare a static rxBuf made of uint8_t since it'll store register contents
+
+  // Call HAL_I2C_Mem_Read_DMA with necessary values (check number of bytes!)
+    
+  return 1;
+}
+
+void MPU6050_readGyro_DMA_Complete(MPU6050* mpu6050) {
+  // Take raw data from registers and make signed 16-bit integers
+
+  // Scale it according to gyro_FSR
+
+  // Store it away in the MPU6050 instance
+  
+}
+
+void MPU6050_readAccel_DMA_Complete(MPU6050* mpu6050) {
+  // Take raw data from registers and make signed 16-bit integers
+
+  // Scale it according to accel_FSR + scale it to be in m/s^2
+
+  // Store it away in the MPU6050 instance
+
+}
+
+void MPU6050_readTemp_DMA_Complete(MPU6050* mpu6050) {
+  // Take raw data from registers and make signed 16-bit integers
+
+  // Fix it to be in celsius
+
+  // Store it away in the MPU6050 instance
+
+}
+
+// REVIEW - Consider rewriting to enable any of the bits to be switched
+HAL_StatusTypeDef MPU6050_INT_enable(MPU6050* mpu6050) {
+  // Write 0x01 to the INT_ENABLE register to enable the DATA_RDY bit -> only generate INT when data is in registers
+  HAL_StatusTypeDef result = MPU6050_writeRegister(mpu6050, INT_ENABLE, 0x01);
+  return result;
+}
+
+
 
 /* Low Level Functions */
 HAL_StatusTypeDef MPU6050_readRegister(MPU6050* mpu6050, uint8_t reg, uint8_t* data) {
@@ -360,3 +419,24 @@ HAL_StatusTypeDef MPU6050_readRegisters(MPU6050* mpu6050, uint8_t reg, uint8_t* 
   return HAL_OK;
 }
 
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_PIN) {
+  // Check if the pin that just went high was the interrupt pin
+
+  // If it was, then call MPU6050_readGyro_DMA, MPU6050_readAccel_DMA and MPU6050_readTemp_DMA
+}
+
+void HAL_I2C_MemTxCpltCallback(I2C_HandleTypeDef* hi2c) {
+  // We have finished writing something via HAL_I2C_MemWrite -> Do something
+
+  // Check that this handle matches our designated I2C bus (hi2c->Instance == I2C4)
+
+  // If so, 
+}
+
+void HAL_I2C_MemRxCpltCallback(I2C_HandleTypeDef* hi2c) {
+  // We have finished receiving via HAL_I2C_MemRead -> Do something
+
+  // Check that this handle matches our designated I2C bus (hi2c->Instance == I2C4)
+
+  // If so, then call MPU6050_readGyro_DMA_Complete, MPU6050_readAccel_DMA_Complete and MPU6050_readTemp_DMA_Complete
+}

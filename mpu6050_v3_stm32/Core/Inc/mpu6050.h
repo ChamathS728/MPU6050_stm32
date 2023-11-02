@@ -14,7 +14,6 @@
 #include "stm32h7xx_hal.h" // Need this for I2C communications via HAL
 
 /* DEFINES */
-#define WHO_AM_I        0x75
 #define MPU_ADDR       (0x68 << 1) // Datasheet says 0x68; left shift by 1 due to 7-bit addressing
 
 
@@ -152,7 +151,7 @@ HAL_StatusTypeDef MPU6050_set_accel_FSR(Accel_FSR_SEL_TypeDef setting, MPU6050* 
 HAL_StatusTypeDef MPU6050_FIFO_enable(MPU6050* mpu6050);
 HAL_StatusTypeDef MPU6050_FIFO_reset(MPU6050* mpu6050);
 HAL_StatusTypeDef MPU6050_init(MPU6050* mpu6050_ptr,I2C_HandleTypeDef* hi2c, uint8_t* dlpf, uint8_t* smpl_frq, Gyro_FSR_SEL_TypeDef gyro_setting, Accel_FSR_SEL_TypeDef accel_setting);
-
+HAL_StatusTypeDef MPU6050_INT_enable(MPU6050* mpu6050);
 
 /* Data Acquisition functions */
 HAL_StatusTypeDef MPU6050_read_gyro_reg(MPU6050* mpu6050);
