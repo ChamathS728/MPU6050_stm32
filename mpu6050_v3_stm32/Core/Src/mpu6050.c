@@ -419,24 +419,5 @@ HAL_StatusTypeDef MPU6050_readRegisters(MPU6050* mpu6050, uint8_t reg, uint8_t* 
   return HAL_OK;
 }
 
-void HAL_GPIO_EXTI_Callback(uint16_t GPIO_PIN) {
-  // Check if the pin that just went high was the interrupt pin
 
-  // If it was, then call MPU6050_readGyro_DMA, MPU6050_readAccel_DMA and MPU6050_readTemp_DMA
-}
 
-void HAL_I2C_MemTxCpltCallback(I2C_HandleTypeDef* hi2c) {
-  // We have finished writing something via HAL_I2C_MemWrite -> Do something
-
-  // Check that this handle matches our designated I2C bus (hi2c->Instance == I2C4)
-
-  // If so, 
-}
-
-void HAL_I2C_MemRxCpltCallback(I2C_HandleTypeDef* hi2c) {
-  // We have finished receiving via HAL_I2C_MemRead -> Do something
-
-  // Check that this handle matches our designated I2C bus (hi2c->Instance == I2C4)
-
-  // If so, then call MPU6050_readGyro_DMA_Complete, MPU6050_readAccel_DMA_Complete and MPU6050_readTemp_DMA_Complete
-}

@@ -158,6 +158,15 @@ HAL_StatusTypeDef MPU6050_read_gyro_reg(MPU6050* mpu6050);
 HAL_StatusTypeDef MPU6050_read_accel_reg(MPU6050* mpu6050);
 HAL_StatusTypeDef MPU6050_read_temp_reg(MPU6050* mpu6050);
 
+uint8_t MPU6050_readGyro_DMA(MPU6050* mpu6050);
+uint8_t MPU6050_readAccel_DMA(MPU6050* mpu6050);
+uint8_t MPU6050_readTemp_DMA(MPU6050* mpu6050);
+
+void MPU6050_readGyro_DMA_Complete(MPU6050* mpu6050);
+void MPU6050_readAccel_DMA_Complete(MPU6050* mpu6050);
+void MPU6050_readTemp_DMA_Complete(MPU6050* mpu6050);
+
+
 /* Low-level functions */
 HAL_StatusTypeDef MPU6050_readRegister(MPU6050* mpu6050, uint8_t reg, uint8_t* data);
   /*
