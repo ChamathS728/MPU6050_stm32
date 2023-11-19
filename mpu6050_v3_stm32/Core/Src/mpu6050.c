@@ -325,11 +325,17 @@ HAL_StatusTypeDef MPU6050_read_temp_reg(MPU6050* mpu6050) {
 }
 
 uint8_t MPU6050_readGyro_DMA(MPU6050* mpu6050) {
-  // Declare a static rxBuf made of uint8_t since it'll store register contents
+  // Declare a static txBuf made of uint8_t since it'll store register contents
+  static uint8_t txBuf[6];
 
   // Call HAL_I2C_Mem_Read_DMA with necessary values (check number of bytes!)
-  
-  return 1;
+  if (HAL_I2C_Mem_Read_DMA(mpu6050->i2c_handle, mpu6050->MPU6050_addr, GYRO_XOUT_H, I2C_MEMADD_SIZE_8BIT, txBuf, 6) == HAL_OK) {
+    return 1;
+  }
+  else {
+    return 0;
+
+  }
 }
 
 uint8_t MPU6050_readAccel_DMA(MPU6050* mpu6050) {
@@ -381,7 +387,6 @@ HAL_StatusTypeDef MPU6050_INT_enable(MPU6050* mpu6050) {
   HAL_StatusTypeDef result = MPU6050_writeRegister(mpu6050, INT_ENABLE, 0x01);
   return result;
 }
-
 
 
 /* Low Level Functions */
